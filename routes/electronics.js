@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const mongoose = require('mongoose');
 const wrapAsync = require("../utils/wrapAsync.js");
-const Electronics = require("../models/Electronics");
+const Electronics = require("../models/electronics");
 
 module.exports = async function createElectronicsData(brandName, modelName, year, warranty, age,productID) {
     const newElectronics = new Electronics({
