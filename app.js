@@ -118,8 +118,8 @@ const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 passport.use(new GoogleStrategy({
     clientID: CLIENT_ID,
     clientSecret: CLIENT_SECRET,
-    // callbackURL: "https://project-ln3i.onrender.com/auth/google/callback"
-    callbackURL: "/auth/google/callback",
+    callbackURL: "https://project-ln3i.onrender.com/auth/google/callback"
+    // callbackURL: "/auth/google/callback",
 
 },
 async function(accessToken, refreshToken, profile, done) {
