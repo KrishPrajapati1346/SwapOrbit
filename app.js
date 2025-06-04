@@ -50,8 +50,6 @@ const about = require("./routes/about.js");
 
 
 
-
-
 app.set("view engine" , "ejs");
 app.set("views" ,path.join(__dirname,"views"));
 app.use(express.urlencoded({extended:true}));
@@ -87,6 +85,12 @@ const store = MongoStore.create({
 store.on("error" , () => {
     console.log("Error in mongo session store ", err);
 });
+
+
+
+console.log('Google Client ID exists:', !!process.env.GOOGLE_CLIENT_ID);
+console.log('Google Client Secret exists:', !!process.env.GOOGLE_CLIENT_SECRET);
+
 
 app.use(session({
     store,
@@ -142,8 +146,21 @@ async function(accessToken, refreshToken, profile, done) {
       return done(err, null);
   }
 }));
-passport.serializeUser((user, done) => done(null, user));
-passport.deserializeUser((user, done) => done(null, user));
+// passport.serializeUser((user, done) => done(null, user));
+// passport.deserializeUser((user, done) => done(null, user));
+
+passport.serializeUser((user, done) => {
+    done(null, user._id);
+});
+
+passport.deserializeUser(async (id, done) => {
+    try {
+        const user = await User.findById(id);
+        done(null, user);
+    } catch (err) {
+        done(err, null);
+    }
+});
 app.get("/auth/google",
     passport.authenticate("google", { scope: ["profile", "email"] })
 );
@@ -160,7 +177,7 @@ app.get("/auth/google/callback",
         } else {
             console.error("User object is null after authentication.");
         }
-        res.redirect("/dashboard");
+        res.redirect("/product");
     }
 );
 
@@ -214,7 +231,14 @@ app.use("/" , about);
 
 
 
-
+// Add this after all your routes
+app.use((err, req, res, next) => {
+    console.error('Authentication Error:', err);
+    if (err.name === 'TokenError') {
+        return res.redirect('/?error=token_error');
+    }
+    res.status(500).json({ error: 'Internal server error' });
+});
 
 
 
