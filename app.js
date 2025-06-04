@@ -148,22 +148,38 @@ app.get("/auth/google",
     passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
+// app.get("/auth/google/callback",
+//     passport.authenticate("google", { failureRedirect: "/" }),
+//     (req, res) => {
+//         res.redirect("/dashboard"); // Redirect after successful login
+//     }
+// );
+
+// app.get("/dashboard", (req, res) => {
+//     if (req.isAuthenticated()) {
+//         // res.send(`Hello, ${req.user.username}`);
+//         res.redirect("/product");
+//     } else {
+//         res.redirect("/");
+//     }
+// });
+
+
 app.get("/auth/google/callback",
     passport.authenticate("google", { failureRedirect: "/" }),
     (req, res) => {
-        res.redirect("/dashboard"); // Redirect after successful login
+        res.redirect("/profile"); // Redirect to home page after successful login
     }
 );
 
-app.get("/dashboard", (req, res) => {
+app.get("/profile", (req, res) => {
     if (req.isAuthenticated()) {
-        // res.send(`Hello, ${req.user.username}`);
+        // res.send(`Welcome to the home page, ${req.user.username}!`);
         res.redirect("/product");
     } else {
-        res.redirect("/");
+        res.redirect("/"); // Redirect to login if not authenticated
     }
 });
-
 
 
 // // Passport Strategy
