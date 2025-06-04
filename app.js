@@ -152,63 +152,32 @@ passport.deserializeUser((user, done) => done(null, user));
 app.get("/auth/google",
     passport.authenticate("google", { scope: ["profile", "email"] })
 );
+
 app.get("/auth/google/callback",
     (req, res, next) => {
-        console.log("=== GOOGLE CALLBACK DEBUG ===");
-        console.log("Full URL:", req.url);
-        console.log("Query params:", req.query);
-        console.log("Headers:", req.headers);
-        
-        if (req.query.error) {
-            console.log("Google returned error:", req.query.error);
-            console.log("Error description:", req.query.error_description);
-            return res.redirect("/?error=" + req.query.error);
-        }
-        
-        if (req.query.code) {
-            console.log("Authorization code received:", req.query.code.substring(0, 10) + "...");
-        }
-        
+        console.log("Received callback from Google...");
         next();
     },
-    (req, res, next) => {
-        passport.authenticate("google", (err, user, info) => {
-            console.log("=== PASSPORT AUTHENTICATE RESULT ===");
-            console.log("Error:", err);
-            console.log("User:", user ? user.email : "null");
-            console.log("Info:", info);
-            
-            if (err) {
-                console.error("Authentication error details:", err);
-                return res.redirect("/?error=auth_failed");
-            }
-            
-            if (!user) {
-                console.error("No user returned from authentication");
-                return res.redirect("/?error=no_user");
-            }
-            
-            req.logIn(user, (err) => {
-                if (err) {
-                    console.error("Login error:", err);
-                    return res.redirect("/?error=login_failed");
-                }
-                
-                console.log("User successfully logged in:", user.email);
-                res.redirect("/product");
-            });
-        })(req, res, next);
+    passport.authenticate("google", { failureRedirect: "/" }),
+    (req, res) => {
+        if (req.user) {
+            console.log(`User successfully logged in: ${req.user.username}`);
+        } else {
+            console.error("User object is null after authentication.");
+        }
+        res.redirect("/product");
     }
 );
-// app.get("/dashboard", (req, res) => {
-//     if (req.isAuthenticated()) { 
-//         console.log(`Accessing dashboard for user: ${req.user.username}`);
-//         res.redirect("/product");
-//     } else {
-//         console.warn("Unauthorized access attempt to dashboard.");
-//         res.redirect("/");
-//     }
-// });
+
+app.get("/dashboard", (req, res) => {
+    if (req.isAuthenticated()) { 
+        console.log(`Accessing dashboard for user: ${req.user.username}`);
+        res.redirect("/product");
+    } else {
+        console.warn("Unauthorized access attempt to dashboard.");
+        res.redirect("/");
+    }
+});
 
 
 
