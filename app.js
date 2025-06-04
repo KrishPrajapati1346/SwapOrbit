@@ -95,19 +95,19 @@ console.log('Google Client Secret exists:', !!process.env.GOOGLE_CLIENT_SECRET);
 app.use(session({
     store,
     secret: process.env.SECRET, 
-    resave:false ,
-    saveUninitialized:true,
+    resave: false,
+    saveUninitialized: false, // Changed to false
     cookie: {
-      expires : Date.now() + 7 * 24 * 60 * 60 * 1000,
-      maxAge : 7 * 24 * 60 * 60 * 1000,
-      httpOnly: true,   
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        httpOnly: true,   
+        secure: process.env.NODE_ENV === 'production' // Add this
     }  
-  }));
+}));
 
 
 
   app.use(flash());
-  app.use(flash());
+
   
 
 // Initialize Passport
@@ -158,26 +158,37 @@ passport.deserializeUser(async (id, done) => {
         const user = await User.findById(id);
         done(null, user);
     } catch (err) {
+        console.error("Deserialize error:", err);
         done(err, null);
     }
 });
 app.get("/auth/google",
     passport.authenticate("google", { scope: ["profile", "email"] })
 );
-
 app.get("/auth/google/callback",
     (req, res, next) => {
         console.log("Received callback from Google...");
+        console.log("Query params:", req.query);
+        console.log("Body:", req.body);
         next();
     },
-    passport.authenticate("google", { failureRedirect: "/" }),
+    passport.authenticate("google", { 
+        failureRedirect: "/",
+        failureMessage: true
+    }),
     (req, res) => {
-        if (req.user) {
-            console.log(`User successfully logged in: ${req.user.username}`);
-        } else {
-            console.error("User object is null after authentication.");
+        try {
+            if (req.user) {
+                console.log(`User successfully logged in: ${req.user.username}`);
+                res.redirect("/product");
+            } else {
+                console.error("User object is null after authentication.");
+                res.redirect("/?error=no_user");
+            }
+        } catch (err) {
+            console.error("Callback error:", err);
+            res.redirect("/?error=callback_failed");
         }
-        res.redirect("/product");
     }
 );
 
