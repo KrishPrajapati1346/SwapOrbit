@@ -155,20 +155,20 @@ app.get("/auth/google",
 
 app.get("/auth/google/callback",
     (req, res, next) => {
-        console.log("Received callback from Google...");
+        console.log("Google callback URL:", req.url);
+        console.log("Google callback query:", req.query);
+        if (req.query.error) {
+            console.log("Google OAuth Error:", req.query.error);
+            console.log("Error description:", req.query.error_description);
+        }
         next();
     },
     passport.authenticate("google", { failureRedirect: "/" }),
     (req, res) => {
-        if (req.user) {
-            console.log(`User successfully logged in: ${req.user.username}`);
-        } else {
-            console.error("User object is null after authentication.");
-        }
-        res.redirect("/dashboard");
+        console.log(`User successfully logged in via Google: ${req.user.username}`);
+        res.redirect("/product");
     }
 );
-
 app.get("/dashboard", (req, res) => {
     if (req.isAuthenticated()) { 
         console.log(`Accessing dashboard for user: ${req.user.username}`);
