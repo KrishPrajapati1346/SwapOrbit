@@ -118,7 +118,7 @@ const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 passport.use(new GoogleStrategy({
     clientID: CLIENT_ID,
     clientSecret: CLIENT_SECRET,
-    callbackURL: "https://project-ln3i.onrender.com/auth/google/callback"
+    callbackURL: "http://project-ln3i.onrender.com/auth/google/callback"
     // callbackURL: "/auth/google/callback",
 
 },
@@ -138,48 +138,44 @@ async function(accessToken, refreshToken, profile, done) {
 
       return done(null, user);
   } catch (err) {
+    console.error("Error during Google login:", err); 
       return done(err, null);
   }
 }));
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
-
 app.get("/auth/google",
     passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-// app.get("/auth/google/callback",
-//     passport.authenticate("google", { failureRedirect: "/" }),
-//     (req, res) => {
-//         res.redirect("/dashboard"); // Redirect after successful login
-//     }
-// );
-
-// app.get("/dashboard", (req, res) => {
-//     if (req.isAuthenticated()) {
-//         // res.send(`Hello, ${req.user.username}`);
-//         res.redirect("/product");
-//     } else {
-//         res.redirect("/");
-//     }
-// });
-
-
 app.get("/auth/google/callback",
+    (req, res, next) => {
+        console.log("Received callback from Google...");
+        next();
+    },
     passport.authenticate("google", { failureRedirect: "/" }),
     (req, res) => {
-        res.redirect("/profile"); // Redirect to home page after successful login
+        if (req.user) {
+            console.log(`User successfully logged in: ${req.user.username}`);
+        } else {
+            console.error("User object is null after authentication.");
+        }
+        res.redirect("/dashboard");
     }
 );
 
-app.get("/profile", (req, res) => {
+app.get("/dashboard", (req, res) => {
     if (req.isAuthenticated()) {
-        // res.send(`Welcome to the home page, ${req.user.username}!`);
+        console.log(`Accessing dashboard for user: ${req.user.username}`);
         res.redirect("/product");
     } else {
-        res.redirect("/"); // Redirect to login if not authenticated
+        console.warn("Unauthorized access attempt to dashboard.");
+        res.redirect("/");
     }
 });
+
+
+
 
 
 // // Passport Strategy
