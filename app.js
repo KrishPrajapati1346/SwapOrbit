@@ -1,3 +1,8 @@
+
+
+
+
+
 if(process.env.NODE_ENV != "production"){
     require('dotenv').config();
 }
@@ -50,6 +55,8 @@ const about = require("./routes/about.js");
 
 
 
+
+
 app.set("view engine" , "ejs");
 app.set("views" ,path.join(__dirname,"views"));
 app.use(express.urlencoded({extended:true}));
@@ -86,28 +93,22 @@ store.on("error" , () => {
     console.log("Error in mongo session store ", err);
 });
 
-
-
-console.log('Google Client ID exists:', !!process.env.GOOGLE_CLIENT_ID);
-console.log('Google Client Secret exists:', !!process.env.GOOGLE_CLIENT_SECRET);
-
-
 app.use(session({
     store,
     secret: process.env.SECRET, 
-    resave: false,
-    saveUninitialized: false, // Changed to false
+    resave:false ,
+    saveUninitialized:true,
     cookie: {
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        httpOnly: true,   
-        secure: process.env.NODE_ENV === 'production' // Add this
+      expires : Date.now() + 7 * 24 * 60 * 60 * 1000,
+      maxAge : 7 * 24 * 60 * 60 * 1000,
+      httpOnly: true,   
     }  
-}));
+  }));
 
 
 
   app.use(flash());
-
+  app.use(flash());
   
 
 // Initialize Passport
@@ -146,54 +147,30 @@ async function(accessToken, refreshToken, profile, done) {
       return done(err, null);
   }
 }));
-// passport.serializeUser((user, done) => done(null, user));
-// passport.deserializeUser((user, done) => done(null, user));
-
-passport.serializeUser((user, done) => {
-    done(null, user._id);
-});
-
-passport.deserializeUser(async (id, done) => {
-    try {
-        const user = await User.findById(id);
-        done(null, user);
-    } catch (err) {
-        console.error("Deserialize error:", err);
-        done(err, null);
-    }
-});
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((user, done) => done(null, user));
 app.get("/auth/google",
     passport.authenticate("google", { scope: ["profile", "email"] })
 );
+
 app.get("/auth/google/callback",
     (req, res, next) => {
         console.log("Received callback from Google...");
-        console.log("Query params:", req.query);
-        console.log("Body:", req.body);
         next();
     },
-    passport.authenticate("google", { 
-        failureRedirect: "/",
-        failureMessage: true
-    }),
+    passport.authenticate("google", { failureRedirect: "/" }),
     (req, res) => {
-        try {
-            if (req.user) {
-                console.log(`User successfully logged in: ${req.user.username}`);
-                res.redirect("/product");
-            } else {
-                console.error("User object is null after authentication.");
-                res.redirect("/?error=no_user");
-            }
-        } catch (err) {
-            console.error("Callback error:", err);
-            res.redirect("/?error=callback_failed");
+        if (req.user) {
+            console.log(`User successfully logged in: ${req.user.username}`);
+        } else {
+            console.error("User object is null after authentication.");
         }
+        res.redirect("/dashboard");
     }
 );
 
 app.get("/dashboard", (req, res) => {
-    if (req.isAuthenticated()) {
+    if (req.isAuthenticated()) { 
         console.log(`Accessing dashboard for user: ${req.user.username}`);
         res.redirect("/product");
     } else {
@@ -242,14 +219,7 @@ app.use("/" , about);
 
 
 
-// Add this after all your routes
-app.use((err, req, res, next) => {
-    console.error('Authentication Error:', err);
-    if (err.name === 'TokenError') {
-        return res.redirect('/?error=token_error');
-    }
-    res.status(500).json({ error: 'Internal server error' });
-});
+
 
 
 
